@@ -1,0 +1,7 @@
+streamlit
+transformers
+flask
+sklearn
+PyPDF2
+bert_score
+rouge_score
