@@ -4,6 +4,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
 import bert_score
 from rouge_score import rouge_scorer
+import difflib
+
 
 def extract_text(uploaded_file):
     text = ""
@@ -26,6 +28,13 @@ def rouge_similarity(text1, text2):
     scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
     scores = scorer.score(text1, text2)
     return scores['rougeL'].fmeasure
+
+def highlight_similarity(text1, text2):
+    diff = difflib.ndiff(text1.splitlines(), text2.splitlines())
+    return '\n'.join(list(diff))
+
+
+
 
 def main():
     st.title("SIMILARITY CHECKER BETWEEN TWO PDF FILES")
@@ -59,6 +68,17 @@ def main():
             elif similarity_metric == "ROUGE Score":
                 rouge_similarity_score = rouge_similarity(text1, text2)
                 st.write(f"The ROUGE similarity score between the two files is {rouge_similarity_score:.2f}.")
+
+            #button to generate highlighted similarity after similarity score
+            # st.button("Generate Highlighted Similarity")
+
+            
+            st.write("Highlighted Similarity:")
+            st.write(highlight_similarity(text1, text2))
+            # st.write("File 1:")
+            # st.write(text1)
+            # st.write("File 2:")
+            # st.write(text2)
 
 if __name__ == "__main__":
     main()
