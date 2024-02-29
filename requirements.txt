@@ -7,3 +7,4 @@ bert_score
 rouge_score
 nltk
 matplotlib
+sentencepiece
