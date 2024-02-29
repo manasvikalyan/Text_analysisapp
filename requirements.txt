@@ -1,7 +1,10 @@
 streamlit
 transformers
 flask
-sklearn
+scikit-learn
 PyPDF2
 bert_score
 rouge_score
+nltk
+difflib
+matplotlib

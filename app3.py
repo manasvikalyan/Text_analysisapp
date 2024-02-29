@@ -4,9 +4,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
 import bert_score
 from rouge_score import rouge_scorer
-import difflib
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from difflib import SequenceMatcher
+from nltk.sentiment import SentimentIntensityAnalyzer
+import matplotlib.pyplot as plt
+
+st.set_page_config(page_title="Streamlit Sentiment App", page_icon="static/res/favicon.png")
 
 
 # Initialize the model and tokenizer
@@ -64,12 +67,29 @@ def generate_summary(text):
     
     return summary
 
-def main():
-    st.title("SIMILARITY CHECKER BETWEEN TWO PDF FILES AND DOCUMENT SUMMARIZATION")
-    st.write("This app checks the similarity between two PDF files using different similarity metrics or generates a summary for a single document.")
-    st.write("Upload PDF files, select an option from the dropdown menu, and proceed accordingly.")
 
-    option = st.selectbox("Select Option", ["Check Similarity", "Generate Summary"])
+def predict_sentiment(text, threshold_positive, threshold_negative):
+    sid = SentimentIntensityAnalyzer()
+    sentiment_scores = sid.polarity_scores(text)
+
+    threshold_positive = float(threshold_positive)
+    threshold_negative = float(threshold_negative)
+
+    if sentiment_scores.get("compound", 0) >= threshold_positive:
+        return "Positive"
+    elif sentiment_scores.get("compound", 0) <= threshold_negative:
+        return "Negative"
+    else:
+        return "Neutral"
+
+
+def main():
+    st.title("Text Analysis App")
+    st.write("This app checks the similarity between two PDF files using different similarity metrics or generates a summary for a single document or does the sentiment analyis.")
+    st.write("Upload PDF files, select an option from the dropdown menu, and proceed accordingly.")
+    
+    
+    option = st.selectbox("Select Option", ["Check Similarity", "Generate Summary", "Sentiment Analysis"])
 
     if option == "Check Similarity":
         uploaded_file1 = st.file_uploader("Choose a PDF file 1", type="pdf")
@@ -111,6 +131,44 @@ def main():
                 summary = generate_summary(text)
                 st.write("Summary:")
                 st.write(summary)
+    elif option == "Sentiment Analysis":
+        threshold_positive = st.number_input("Threshold for Positive Sentiment:", value=0.05, step=0.01)
+        threshold_negative = st.number_input("Threshold for Negative Sentiment:", value=-0.05, step=0.01)
+        uploaded_file = st.file_uploader("Upload PDF Document")
 
+        if uploaded_file:
+            pdf_reader = pdf.PdfReader(uploaded_file)
+            positive_count = 0
+            negative_count = 0
+            neutral_count = 0
+
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                sentences = text.split(".")
+                for sentence in sentences:
+                    sentence = sentence.strip()
+                    if sentence:
+                        sentiment = predict_sentiment(sentence, threshold_positive, threshold_negative)
+                        if sentiment == "Positive":
+                            positive_count += 1
+                        elif sentiment == "Negative":
+                            negative_count += 1
+                        else:
+                            neutral_count += 1
+
+            st.write("Positive Sentences:", positive_count)
+            st.write("Negative Sentences:", negative_count)
+            st.write("Neutral Sentences:", neutral_count)
+
+            labels = ["Positive", "Negative", "Neutral"]
+            sizes = [positive_count, negative_count, neutral_count]
+
+            fig, ax = plt.subplots()
+            ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
+            ax.axis("equal")
+            ax.set_title("Sentiment Distribution")
+
+            st.pyplot(fig)
+            
 if __name__ == "__main__":
     main()
